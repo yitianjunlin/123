@@ -1,1 +1,51 @@
+#include <stdio.h>
+#include <stdint.h>
 
+// AES加密函数
+void aes_encrypt(const uint8_t* plaintext, const uint8_t* key, uint8_t* ciphertext) {
+    // 这里假设密钥和明文的长度都是128位（16字节）
+
+    // ARMv8-A AES指令加密
+    __asm {
+        mov r0, plaintext   // r0寄存器保存明文
+        mov r1, key         // r1寄存器保存密钥
+
+        // 加载明文
+        vld1.8 {d0}, [r0]
+
+        // 加载密钥
+        vld1.8 {d1}, [r1]
+
+        // AES加密
+        aesmc d2, d1
+        aese d2, d0
+
+        // 存储结果
+        mov r2, ciphertext
+        vst1.8 {d2}, [r2]
+    }
+}
+
+int main() {
+    uint8_t plaintext[16] = { 0x32, 0x88, 0x31, 0xe0, 0x43, 0x5a, 0x31, 0x37,
+                             0xf6, 0x30, 0x98, 0x07, 0xa8, 0x8d, 0xa2, 0x34 };
+    uint8_t key[16] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
+                       0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t ciphertext[16];
+
+    aes_encrypt(plaintext, key, ciphertext);
+
+    printf("Plaintext: ");
+    for (int i = 0; i < 16; i++) {
+        printf("%02x ", plaintext[i]);
+    }
+    printf("\n");
+
+    printf("Ciphertext: ");
+    for (int i = 0; i < 16; i++) {
+        printf("%02x ", ciphertext[i]);
+    }
+    printf("\n");
+
+    return 0;
+}
